@@ -1,0 +1,43 @@
+CLIP-RN50_no-pos:
+  extractor_type: clip
+  backbone: RN50
+  pretrain: openai
+  pos_embedding: false
+
+CLIP-RN50_pos:
+  extractor_type: clip
+  backbone: RN50
+  pretrain: openai
+  pos_embedding: true
+
+CLIP-ViT-H-14:
+  extractor_type: open-clip
+  backbone: ViT-H-14
+  pretrain: laion2b_s32b_b79k
+  pos_embedding: null
+
+CLIP-ViT-bigG-14:
+  extractor_type: open-clip
+  backbone: ViT-bigG-14
+  pretrain: laion2b_s39b_b160k
+  pos_embedding: null
+
+CLIP-ViT-L-14:
+  extractor_type: open-clip
+  backbone: ViT-L-14
+  pretrain: laion2B-s32B-b82K
+  pos_embedding: null
+
+
+DINOv2-ViT-L-14:
+  extractor_type: dinov2
+  backbone: vitl14
+  pretrain: dinov2_vitl14
+  pos_embedding: null
+
+
+COCA-ViT-L-14:
+  extractor_type: open-clip
+  backbone: coca_ViT-L-14
+  pretrain: mscoco_finetuned_laion2B-s13B-b90k
+  pos_embedding: null

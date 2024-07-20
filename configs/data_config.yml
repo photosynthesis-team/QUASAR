@@ -1,0 +1,70 @@
+KADIS700k:
+  dataset: kadis700k
+  dataset_path: TODO
+  batch_size: 128
+
+PIPAL: 
+  dataset: pipal
+  dataset_path: TODO
+  batch_size: 128
+
+TID2013:
+  dataset: tid2013
+  dataset_path: TODO
+  batch_size: 128
+
+KonIQ10k:
+  dataset: koniq10k
+  dataset_path: TODO
+  batch_size: 128
+
+KADID10k:
+  dataset: kadid10k
+  dataset_path: TODO
+  batch_size: 128
+
+LIVEitW:
+  dataset: liveitw
+  dataset_path: TODO
+  batch_size: 1
+
+SPAQ:
+  dataset: spaq
+  dataset_path: TODO
+  batch_size: 1
+
+SPAQ512:
+  dataset: spaq
+  dataset_path: TODO
+  batch_size: 1
+
+TAD66k:
+  dataset: tad66k
+  dataset_path: TODO
+  batch_size: 128
+
+AVA:
+  dataset: ava
+  dataset_path: TODO
+  batch_size: 128
+
+AADB: 
+  dataset: aadb
+  dataset_path: TODO
+  batch_size: 128
+
+PieAPP: 
+  dataset: pieapp
+  dataset_path: TODO
+  batch_size: 128
+
+SAC:
+  dataset: sac
+  dataset_path: TODO
+  batch_size: 1
+
+
+COYO700m:
+  dataset: coyo700m
+  dataset_path: TODO
+  batch_size: 1
