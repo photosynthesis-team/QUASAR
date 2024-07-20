@@ -1,0 +1,18 @@
+# Promts
+prompt_data: KADIS700k # text or Dataset name
+prompt_backbone: CLIP-RN50_no-pos
+prompt_ratio: 1. # default 1.0
+
+target_backbone: CLIP-RN50_no-pos
+target_data: PieAPP
+target_data_subset: test
+target_cv_folds: null # int number or null; defult null
+
+batch_size: 64
+embeddings_path: TODO
+device: cuda:0
+seed: 42
+verbose: false
+
+data_config: /home/dp20/repos/ciq/config/data_config.yml
+backbone_config: /home/dp20/repos/ciq/config/backbone_config.yml
