@@ -6,7 +6,7 @@ from typing import Callable, Tuple, Optional
 import torch
 from tqdm.auto import tqdm
 from utils.io import read_yml, dump_yml, dump_json
-from extraction.dataset import dataset_factory
+from extraction.datasets import dataset_factory
 from clip.clip import load
 import open_clip
 from open_clip.transform import image_transform
@@ -73,12 +73,15 @@ def get_data_compute_embeddings(dataset: str, dataset_path: str, preprocess: Cal
 def get_feature_extractor(
     feature_extractor_type: str, backbone: str, pretrain: str, device: torch.device
 ) -> Tuple[torch.nn.Module, Optional[Callable]]:
+    print(feature_extractor_type)
     if feature_extractor_type == "open-clip":
         feature_extractor, _, preprocess = open_clip.create_model_and_transforms(
             backbone, device=device, pretrained=pretrain
         )
     elif feature_extractor_type == "clip":
-        feature_extractor = load(backbone, device=device)
+
+        feature_extractor, _ = load(backbone, device=device)
+        print(type(feature_extractor))
         preprocess = None
     elif feature_extractor_type == "dinov2":
         feature_extractor = torch.hub.load("facebookresearch/dinov2", pretrain)
