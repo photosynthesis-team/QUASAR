@@ -51,7 +51,7 @@ def parse_args() -> dict:
         type=int,
         default=None,
         metavar="",
-        help="Resize the images of the dataset: None, 224, 512",
+        help="resize the images of the dataset: None, 224, 512",
     )
 
     parser.add_argument(
