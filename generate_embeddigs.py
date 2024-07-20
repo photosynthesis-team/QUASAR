@@ -33,33 +33,58 @@ def parse_args() -> dict:
     """
     parser = argparse.ArgumentParser(description="Script to generate the features")
 
-    parser.add_argument("--dataset", metavar="", help="dataset: metntion options.")
-    parser.add_argument("--dataset_dir", metavar="", help="path to raw dataset")
     parser.add_argument(
-        "--batch_size", type=int, default=1, metavar="", help="path to config file"
+        "--dataset",
+        metavar="",
+        help="supported datasets: kadis700k, pipal, tid2013, koniq10k, kadid10k, liveitw, spaq, tad66k, pieapp, sac, coyo700m.",
+    )
+    parser.add_argument("--dataset_dir", metavar="", help="path to the dataset")
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=1,
+        metavar="",
+        help="batch size. Choose 1 to use native resolution of the dataset.",
     )
     parser.add_argument(
-        "--resolution", type=int, default=None, metavar="", help="path to config file"
+        "--resolution",
+        type=int,
+        default=None,
+        metavar="",
+        help="Resize the images of the dataset: None, 224, 512",
     )
 
     parser.add_argument(
-        "--backbone", metavar="", help="extractor backbone: Metntion options."
-    )
-    parser.add_argument(
-        "--backbone_type", metavar="", help="extractor backbone: Metntion options."
-    )
-    parser.add_argument("--pretrain", metavar="", help="path to config file")
-    parser.add_argument(
-        "--positional_embedding", default=None, metavar="", help="path to config file"
+        "--backbone",
+        metavar="",
+        help="extractor backbone: RN50, ViT-H-14, ViT-bigG-14, ViT-L-14, coca_ViT-L-14, vitl14",
     )
 
+    parser.add_argument(
+        "--backbone_type",
+        metavar="",
+        help="extractor backbone type: clip, open-clip, dinov2",
+    )
+    parser.add_argument("--pretrain", metavar="", help="pretrain version")
+
+    parser.add_argument(
+        "--positional_embedding",
+        default=None,
+        action="store_true",
+        help="enable positional embeddings",
+    )
+    parser.add_argument(
+        "--no-positional_embedding",
+        dest="positional_embedding",
+        action="store_false",
+        help="disable positional embeddings",
+    )
     parser.add_argument(
         "--embeddings_dir", metavar="", help="path to embeddings directory"
     )
     parser.add_argument("--device", default="cuda:0", metavar="", help="device to use")
-    parser.add_argument(
-        "--seed", type=int, default=42, metavar="", help="path to config file"
-    )
+    parser.add_argument("--seed", type=int, default=42, metavar="", help="random seed")
+    parser.add_argument("--verbose", help="logs", action="store_true")
 
     args = parser.parse_args()
 
@@ -117,6 +142,8 @@ def main(config: dict) -> None:
     dataset = config["dataset"]
     dataset_path = config["dataset_dir"]
     pos_embedding = config["positional_embedding"]
+    if config["backbone"] == "RN50" and config["positional_embedding"] is None:
+        pos_embedding = False
 
     feature_extractor, preprocess = get_feature_extractor(
         feature_extractor_type=model,
@@ -130,6 +157,9 @@ def main(config: dict) -> None:
         feature_extractor, config["backbone_type"], pos_embedding
     )
 
+    if config["backbone"] != "RN50" and config["resolution"] != 224:
+        raise ValueError("Backbones other than ResNet50 require 224 resolution.")
+
     if 512 == config["resolution"]:
         print("WARNING: Using rescale to 512")
         preprocess = Compose(
@@ -140,13 +170,13 @@ def main(config: dict) -> None:
                 Normalize(mean=OPENAI_CLIP_MEAN, std=OPENAI_CLIP_STD),
             ]
         )
-        data_tag += "512"
+        data_tag += "_512"
     elif 224 == config["resolution"]:
         print("WARNING: Using rescale to 224")
         preprocess = image_transform(
             image_size=224, is_train=False, mean=OPENAI_CLIP_MEAN, std=OPENAI_CLIP_STD
         )
-        data_tag += "224"
+        data_tag += "_224"
     else:
         preprocess = Compose(
             [
@@ -159,7 +189,8 @@ def main(config: dict) -> None:
     data = get_data_compute_embeddings(
         dataset=dataset, dataset_path=dataset_path, preprocess=preprocess
     )
-    print(len(data), data[0]["x"].size())
+    if config["verbose"]:
+        print(len(data), data[0]["x"].size())
     # Create loader
     loader = torch.utils.data.DataLoader(
         dataset=data,
@@ -173,7 +204,9 @@ def main(config: dict) -> None:
     paths = []
     embeddings = None
     with torch.no_grad():
-        for item in tqdm(loader, total=len(loader), leave=True):
+        for item in tqdm(
+            loader, total=len(loader), leave=True, disable=not config["verbose"]
+        ):
             x = item["x"]
             x = x.to(device)
             image_features = encode_image(x).cpu()
@@ -204,6 +237,7 @@ def main(config: dict) -> None:
 
 if __name__ == "__main__":
     args = parse_args()
-    print(args)
+    if args["verbose"]:
+        print(args)
     seed_everything(args["seed"])
     main(args)
