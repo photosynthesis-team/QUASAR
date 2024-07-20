@@ -1,6 +1,5 @@
 import torch
 import os
-
 from os.path import join, isfile
 from PIL import Image
 from skimage.io import imread
@@ -18,6 +17,8 @@ def dataset_factory(dataset: str):
         "liveitw": LIVEitW,
         "spaq": SPAQ,
         "tad66k": TAD66k,
+        "ava": AVA,
+        "aadb": AADB,
         "pieapp": PieAPP,
         "sac": SAC,
         "coyo700m": COYO700m,
@@ -106,3 +107,13 @@ class SAC(KADIS700k):
 
 class COYO700m(KADIS700k):
     IMAGE_FOLDERS = ["."]
+
+
+class AVA:
+    def __init__(self, path: str, transform: Optional[Callable] = None) -> None:
+        raise NotImplementedError("AVA dataset requires custom implementation.")
+
+
+class AADB:
+    def __init__(self, path: str, transform: Optional[Callable] = None) -> None:
+        raise NotImplementedError("AADB dataset requires custom implementation.")
