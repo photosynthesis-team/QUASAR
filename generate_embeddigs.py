@@ -6,8 +6,8 @@ from typing import Callable, Tuple, Optional
 import torch
 from tqdm.auto import tqdm
 from utils.io import read_yml, dump_yml, dump_json
-from embeddigs.dataset import dataset_factory
-from embeddigs.clip import load
+from extraction.dataset import dataset_factory
+from clip.clip import load
 import open_clip
 from open_clip.transform import image_transform
 import os
@@ -38,6 +38,10 @@ def parse_args() -> dict:
     parser.add_argument(
         "--batch_size", type=int, default=1, metavar="", help="path to config file"
     )
+    parser.add_argument(
+        "--resolution", type=int, default=None, metavar="", help="path to config file"
+    )
+
     parser.add_argument(
         "--backbone", metavar="", help="extractor backbone: Metntion options."
     )
@@ -136,10 +140,13 @@ def main(config: dict) -> None:
                 Normalize(mean=OPENAI_CLIP_MEAN, std=OPENAI_CLIP_STD),
             ]
         )
+        data_tag += "512"
     elif 224 == config["resolution"]:
+        print("WARNING: Using rescale to 512")
         preprocess = image_transform(
             image_size=224, is_train=False, mean=OPENAI_CLIP_MEAN, std=OPENAI_CLIP_STD
         )
+        data_tag += "224"
     else:
         preprocess = Compose(
             [
@@ -149,12 +156,6 @@ def main(config: dict) -> None:
             ]
         )
 
-    # Add scale to the (0,1) and standardisation
-    # if preprocess is None:
-    # print("Attention: Using Resize to 224!")
-    #
-
-    # Load the data to use
     data = get_data_compute_embeddings(
         dataset=dataset, dataset_path=dataset_path, preprocess=preprocess
     )
@@ -194,8 +195,8 @@ def main(config: dict) -> None:
     embeddings_name = (
         f"{dataset}_{model}_{backbone}_{pretrain.replace('_', '-')}_{pos_embedding}"
     )
-    full_path = os.path.join(config["embeddings_path"], data_tag, embeddings_name)
-    os.makedirs(os.path.join(config["embeddings_path"], data_tag), exist_ok=True)
+    full_path = os.path.join(config["embeddings_dir"], data_tag, embeddings_name)
+    os.makedirs(os.path.join(config["embeddings_dir"], data_tag), exist_ok=True)
     dump_yml(config, f"{full_path}.yml")
     torch.save(embeddings, f"{full_path}.pt")
     dump_json({"results_paths": paths}, f"{full_path}.json")
