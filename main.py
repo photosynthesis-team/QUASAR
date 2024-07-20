@@ -1,5 +1,5 @@
 import argparse
-from util.io import read_yml
+from utils.io import read_yml
 from typing import Tuple, Optional, Callable, Dict, Any
 import torch
 import os

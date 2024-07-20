@@ -1,0 +1,8 @@
+torch
+torchvision
+open_clip_torch
+dinov2
+xformers==0.0.18
+faiss-gpu
+yaml
+#miniball @ git+https://github.com/hbf/miniball.git#egg=miniball&subdirectory=python

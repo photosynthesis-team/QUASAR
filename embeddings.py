@@ -5,7 +5,7 @@ import os
 from typing import Tuple
 from glob import glob
 import pandas as pd
-from util.io import read_json
+from utils.io import read_json
 import numpy as np
 from scipy.io import loadmat
 
