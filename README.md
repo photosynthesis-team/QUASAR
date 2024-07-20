@@ -20,7 +20,7 @@ options:
                         pieapp, sac, coyo700m.
   --dataset_dir         path to the dataset
   --batch_size          batch size. Choose 1 to use native resolution of the dataset.
-  --resolution          Resize the images of the dataset: None, 224, 512
+  --resolution          resize the images of the dataset: None, 224, 512
   --backbone            extractor backbone: RN50, ViT-H-14, ViT-bigG-14, ViT-L-14, coca_ViT-L-14, vitl14
   --backbone_type       extractor backbone type: clip, open-clip, dinov2
   --pretrain            pretrain version
