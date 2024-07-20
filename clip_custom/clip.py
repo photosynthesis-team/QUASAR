@@ -84,7 +84,7 @@ def load(
     jit: bool = False,
     download_root: str = None,
 ):
-    """Load a CLIP model
+    """Load a CLIP model OURS
     Parameters
     ----------
     name : str
@@ -197,7 +197,6 @@ def load(
         patch_float(model.encode_text)
 
         model.float()
-    print(type(model))
     return model
 
 
