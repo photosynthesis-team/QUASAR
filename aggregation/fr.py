@@ -1,4 +1,4 @@
-from util.io import read_json
+from utils.io import read_json
 from typing import Tuple, Dict, Any
 import torch
 import os

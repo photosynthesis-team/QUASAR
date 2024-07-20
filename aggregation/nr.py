@@ -7,8 +7,8 @@ import numpy as np
 from typing import Tuple, Dict, Any, List
 from miniball import miniball
 
-from util.io import read_json
-from util.common import value, key
+from utils.io import read_json
+from utils.common import value, key
 
 
 def get_centroids_nr(
@@ -39,9 +39,11 @@ def get_centroids_nr(
     high_samples = []
     low_samples = []
     for item in paths_embeds:
-        high_samples.append(item) if value(item)[
-            "score"
-        ] > median else low_samples.append(item)
+        (
+            high_samples.append(item)
+            if value(item)["score"] > median
+            else low_samples.append(item)
+        )
 
     high_samples_sorted = sorted(
         high_samples, key=lambda d: d[key(d)]["score"], reverse=True
