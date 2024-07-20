@@ -31,7 +31,10 @@ def parse_args() -> dict:
         Namespace() with arguments
     """
     parser = argparse.ArgumentParser(description="Script to run an experiment")
-    parser.add_argument("-c", "--config", metavar="", help="path to config file")
+    parser.add_argument("--prompt_data", choices=['KADIS700k', 'PIPAL', 'AVA'] help="The data to form anchors")
+    parser.add_argument("--prompt_backbone", 
+                        choices=['TID2013', 'KonIQ10k', 'KADID10k', 'LIVEitW', 'SPAQ', 'TAD66k', 'AADB', 'PieAPP'], 
+                        help="The target dataset to compute scores and SRCC values on")
     args = parser.parse_args()
     return vars(args)
 
@@ -153,9 +156,7 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
     dataset = dataset_factory(dataset=target_data)(
         root=target_data_path,
         subset=target_data_subset,
-        embeddings_path=os.path.join(
-            config["embeddings_path"], target_tag, embeddings_name
-        ),
+        embeddings_name=embeddings_name
     )
     loader = torch.utils.data.DataLoader(
         dataset=dataset, batch_size=config["batch_size"], shuffle=False, drop_last=False

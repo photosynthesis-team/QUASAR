@@ -1,13 +1,19 @@
 # Define datasets to load embeddings and scores
 
+import requests
+from zipfile import ZipFile
+from io import BytesIO
 import torch
 import os
-from typing import Tuple
+from typing import Tuple, Any, Dict
 from glob import glob
 import pandas as pd
 from utils.io import read_json
 import numpy as np
 from scipy.io import loadmat
+
+
+CACHE_FOLDER = os.pathexpanduser("~/.quasar_cache")
 
 
 class TID2013(torch.utils.data.Dataset):
@@ -364,21 +370,41 @@ class TAD66k(torch.utils.data.Dataset):
 
 
 class AADB(torch.utils.data.Dataset):
-    def __init__(self, root: str, embeddings_path: str, subset: str = "all") -> None:
+    def __init__(self, embeddings_url:str, embeddings_name: str, subset: str = "all") -> None:
         supported_subsets = ["all"]
         assert (
             subset in supported_subsets
         ), f"Unknown subset [{subset}], choose one of {supported_subsets}."
 
-        self.emb_tensor = torch.load(f"{embeddings_path}.pt")
-        self.emb_paths = read_json(f"{embeddings_path}.json")["results_paths"]
-        self.labels = read_json(
-            os.path.join(os.path.dirname(embeddings_path), "labels.json")
+        aadb_folder = os.path.join(CACHE_FOLDER, "aadb")
+        if not os.path.isdir(aadb_folder):
+            self.__download_and_unzip(embeddings_url, aadb_folder)
+
+        self.emb_tensor, self.x_paths, self.labels = \
+            self.__load_local_data(os.path.join(aadb_folder, embeddings_name))
+            
+    @staticmethod
+    def __download_and_unzip(url: str, target_folder: str) -> None:
+        response = requests.get(url)
+        response.raise_for_status() 
+
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+
+        with ZipFile(BytesIO(response.content)) as zip_file:
+            zip_file.extractall(target_folder)
+
+
+    def __load_local_data(self, path: str) -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, Any]]:
+        emb_tensor = torch.load(path + ".pt")
+        emb_paths = read_json(path + ".json")["results_paths"]
+        labels = read_json(
+            os.path.join(os.path.dirname(path), "labels.json")
         )
         assert (
-            len(self.emb_tensor) == len(self.emb_paths) == len(self.labels)
+            len(emb_tensor) == len(emb_paths) == len(labels)
         ), "Mismatch of saved embeddings and corresponding filenames"
-        self.x_paths = self.emb_paths
+        return emb_tensor, emb_paths, labels
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, None, float]:
         x = self.emb_tensor[index]
@@ -475,7 +501,6 @@ class COYO700m(torch.utils.data.Dataset):
 
 
 def dataset_factory(dataset: str):
-    # print("dataset", dataset)
     return {
         "pipal": PIPAL,
         "tid2013": TID2013,
