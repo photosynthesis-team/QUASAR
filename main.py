@@ -6,7 +6,7 @@ import os
 import open_clip
 import numpy as np
 import clip
-from ciq.clip import load
+from clip_custom.clip import load
 from embeddings.datasets import dataset_factory
 from tqdm.auto import tqdm
 from scipy.stats import spearmanr
@@ -18,8 +18,7 @@ from aggregation.nr import get_centroids_nr, get_centroids_nr_cluster
 from aggregation.fr import get_centrorids_fr
 from aggregation.nr import (
     get_centroids_nr,
-    get_centroids_nr_cluster,
-    get_centroids_nr_miniball,
+    get_centroids_nr_cluster
 )
 
 
@@ -31,10 +30,27 @@ def parse_args() -> dict:
         Namespace() with arguments
     """
     parser = argparse.ArgumentParser(description="Script to run an experiment")
-    parser.add_argument("--prompt_data", choices=['KADIS700k', 'PIPAL', 'AVA'] help="The data to form anchors")
-    parser.add_argument("--prompt_backbone", 
+
+    # Prompt arguments (text/image)
+    parser.add_argument("--prompt_data", choices=['text', 'KADIS700k', 'PIPAL', 'AVA'],
+                        help="The data to form anchors. `text` stands for CLIP-IQA")
+    parser.add_argument("--prompt_backbone", choices=['CLIP-RN50_no-pos'], 
+                        help='Embeddings extractor for image-based prompt data')
+    parser.add_argument("--prompt_ratio", default=1.0, help="Fraction of embeddings to take for anchor forming")
+
+    # Target arguments
+    parser.add_argument("--target_data", 
                         choices=['TID2013', 'KonIQ10k', 'KADID10k', 'LIVEitW', 'SPAQ', 'TAD66k', 'AADB', 'PieAPP'], 
                         help="The target dataset to compute scores and SRCC values on")
+    parser.add_argument("--target_backbone", choices=['CLIP-RN50_no-pos'], 
+                        help='Embeddings extractor for image-based prompt data')
+    parser.add_argument("--aggregation_type", default='mean', choices=['mean', 'clustering'], 
+                        help='The way to aggregate embeddings into anchors')
+    
+    # General arguments
+    parser.add_argument("--batch_size", type=int, help="mind large batches for low VRAM GPUs")
+    parser.add_argument("--device", choices=['cpu', 'cuda'])
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     return vars(args)
 
@@ -62,8 +78,7 @@ def get_feature_extractor(
 def generate_anchors(
     config: dict, data_config: dict, backbone_config: dict
 ) -> torch.Tensor:
-    if config["verbose"]:
-        print("===== Generating anchors... =====")
+    print("===== Generating anchors... =====")
     prompt_data = config["prompt_data"]
     aggregation_type = config["aggregation_type"]
     assert (
@@ -90,11 +105,9 @@ def generate_anchors(
                 centroids_func = get_centroids_nr
             elif aggregation_type == "clustering":
                 centroids_func = get_centroids_nr_cluster
-            elif aggregation_type == "miniball":
-                centroids_func = get_centroids_nr_miniball
             else:
                 ValueError(
-                    f"Unknown aggregation type {aggregation_type}! Use one of ('mean', 'clustering', 'miniball'"
+                    f"Unknown aggregation type {aggregation_type}! Use one of ('mean', 'clustering'"
                 )
         else:
             raise ValueError(
@@ -218,14 +231,13 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
 
 if __name__ == "__main__":
     args = parse_args()
-    config = read_yml(args["config"])
-    backbone_config = read_yml(config["backbone_config"])
-    data_config = read_yml(config["data_config"])
-    _ = seed_everything(config["seed"])
+    backbone_config = read_yml("configs/backbone_config.yml")
+    data_config = read_yml("configs/data_config.yml")
+    _ = seed_everything(args['seed'])
     print(
-        f"Prompt: {config['prompt_data']} {config['prompt_ratio']} by {config['prompt_backbone']}"
+        f"Prompt: {args['prompt_data']} {args['prompt_ratio']} by {args['prompt_backbone']}"
     )
-    print(f"Target: {config['target_data']} by {config['target_backbone']}")
-    srcc = compute_srcc(config, data_config, backbone_config)
+    print(f"Target: {args['target_data']} by {args['target_backbone']}")
+    srcc = compute_srcc(args, data_config, backbone_config)
 
     print(f"SRCC: {np.round(srcc, 4)}")

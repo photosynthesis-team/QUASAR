@@ -1,11 +1,10 @@
 import torch
-import faiss
+# import faiss
 import random
 
 import numpy as np
 
 from typing import Tuple, Dict, Any, List
-from miniball import miniball
 
 from utils.io import read_json
 from utils.common import value, key
@@ -158,51 +157,3 @@ def get_centroids_nr_cluster(path: str, config: Dict[str, Any]) -> List[torch.Te
         resulting_centroids.append(centroid_values.mean(dim=0))
 
     return resulting_centroids
-
-
-def get_centroids_nr_miniball(
-    path: str, config: Dict[str, Any]
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    paths: np.ndarray = np.array(read_json(f"{path}.json")["results_paths"])
-    embeds: torch.Tensor = torch.load(f"{path}.pt", map_location="cpu")
-    assert len(paths) == len(
-        embeds
-    ), "Number of embeds and their paths has to be the same!"
-
-    # Median value of MOS defines distribution of samples between clusters
-    median = np.median(list({key(item): value(item) for item in paths}.values()))
-
-    ratio = config["prompt_ratio"]
-    if ratio is None:
-        ratio = 1.0
-
-    assert 0.0 < ratio <= 1.0, f"Ratio should be in (0., 1.] interval, got {ratio}"
-
-    high_idx = []
-    low_idx = []
-    for i, item in enumerate(paths):
-        high_idx.append(i) if value(item) > median else low_idx.append(i)
-
-    high_idx = torch.tensor(high_idx)
-    low_idx = torch.tensor(low_idx)
-
-    high_count = len(high_idx)
-    high_limit = round(high_count * ratio)
-    high_idx_shuffled = high_idx[np.random.permutation(high_count)]
-    high_idx_reduced = high_idx_shuffled[:high_limit]
-
-    low_count = len(low_idx)
-    low_limit = round(low_count * ratio)
-    low_idx_shuffled = low_idx[np.random.permutation(low_count)]
-    low_idx_reduced = low_idx_shuffled[:low_limit]
-
-    high_embeds = torch.index_select(embeds, 0, high_idx_reduced)
-    low_embeds = torch.index_select(embeds, 0, low_idx_reduced)
-
-    high_miniball = miniball(high_embeds.numpy().astype(np.float64))
-    low_miniball = miniball(low_embeds.numpy().astype(np.float64))
-
-    high_center = torch.from_numpy(high_miniball["center"].astype(np.float32))
-    low_center = torch.from_numpy(low_miniball["center"].astype(np.float32))
-
-    return high_center, low_center

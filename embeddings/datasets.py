@@ -11,9 +11,10 @@ import pandas as pd
 from utils.io import read_json
 import numpy as np
 from scipy.io import loadmat
+from os.path import expanduser
 
 
-CACHE_FOLDER = os.pathexpanduser("~/.quasar_cache")
+CACHE_FOLDER = expanduser("~/.quasar_cache")
 
 
 class TID2013(torch.utils.data.Dataset):
