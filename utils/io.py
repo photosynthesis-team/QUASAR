@@ -5,7 +5,6 @@ import torch
 import os
 
 from zipfile import ZipFile
-from io import BytesIO
 from typing import Any, Dict, Tuple
 from tqdm import tqdm
 
@@ -94,17 +93,19 @@ def download_and_unzip(url: str, target_folder: str) -> None:
     if total_size != 0 and progress_bar.n != total_size:
         raise RuntimeError("Could not download file")
 
-    with ZipFile(BytesIO(tmp_file)) as zip_file:
-        zip_file.extractall(target_folder)
+    print('Extracting the embeddings archive...')
+    with ZipFile(tmp_file) as zip_file:
+        zip_file.extractall(os.path.dirname(target_folder))
+
+    print('Embeddings data are extracted!')
 
 
 def load_local_data(path: str) -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, Any]]:
     emb_tensor = torch.load(path + ".pt")
     emb_paths = read_json(path + ".json")["results_paths"]
-    labels = read_json(
-        os.path.join(os.path.dirname(path), "labels.json")
-    )
-    assert (
-        len(emb_tensor) == len(emb_paths) == len(labels)
-    ), "Mismatch of saved embeddings and corresponding filenames"
+    try:
+        labels = [list(d.keys())[0] for d in emb_paths]
+    except AttributeError:
+         labels = read_json(os.path.join(os.path.dirname(path), "labels.json"))
+         
     return emb_tensor, emb_paths, labels

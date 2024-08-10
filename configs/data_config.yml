@@ -50,7 +50,7 @@ AVA:
 
 AADB: 
   dataset: aadb
-  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/untagged-f27f3fad9aa4520ae8ef/aadb.zip
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/aadb.zip
   batch_size: 128
 
 PieAPP: 

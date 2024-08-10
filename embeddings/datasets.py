@@ -380,12 +380,12 @@ class AADB(torch.utils.data.Dataset):
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, None, float]:
         x = self.emb_tensor[index]
-        x_path = self.emb_paths[index]
+        x_path = self.x_paths[index]
         score = self.labels[x_path]
         return x, score
 
     def __len__(self) -> int:
-        return len(self.emb_paths)
+        return len(self.x_paths)
 
 
 class SAC(torch.utils.data.Dataset):

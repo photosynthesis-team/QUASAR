@@ -12,6 +12,7 @@ from tqdm.auto import tqdm
 from scipy.stats import spearmanr
 from pytorch_lightning import seed_everything
 from os.path import expanduser
+from functools import partial
 
 from aggregation.nr import get_centroids_nr, get_centroids_nr_cluster
 from aggregation.fr import get_centrorids_fr
@@ -39,8 +40,13 @@ def parse_args() -> dict:
     parser.add_argument("--target_data", 
                         choices=['TID2013', 'KonIQ10k', 'KADID10k', 'LIVEitW', 'SPAQ', 'TAD66k', 'AADB', 'PieAPP'], 
                         help="The target dataset to compute scores and SRCC values on")
+    parser.add_argument("--target_data_subset", type=Optional[str], choices=[None, 'all', 'train', 'test'], 
+                        help="""Select which subset of target data will be used to compute SRCC values. 
+                        Each dataset has its own default value because it varies in literature. 
+                        Use None if not sure for a default value.""")
     parser.add_argument("--target_backbone", choices=['CLIP-RN50_no-pos'], 
                         help='Embeddings extractor for image-based prompt data')
+    parser.add_argument("--target_cv_folds", type=Optional[int], default=None, help="Number of cross validation folds")
     parser.add_argument("--aggregation_type", default='mean', choices=['mean', 'clustering'], 
                         help='The way to aggregate embeddings into anchors')
     
@@ -48,6 +54,10 @@ def parse_args() -> dict:
     parser.add_argument("--batch_size", type=int, help="mind large batches for low VRAM GPUs")
     parser.add_argument("--device", choices=['cpu', 'cuda'])
     parser.add_argument("--seed", type=int, default=42)
+
+    # Aggregation arguments
+    parser.add_argument("--median_offset_ratio", default=None, type=Optional[float],
+                         help="If offset aggreation is used, this one determince the offset from the median score")
     args = parser.parse_args()
     return vars(args)
 
@@ -114,7 +124,8 @@ def generate_anchors(
         ref_centroid, dist_centroid = centroids_func(
             CACHE_FOLDER, 
             data_config[prompt_data.upper()]["dataset_path"],
-            embeddings_name, config
+            embeddings_name, 
+            config
         )
         anchors = torch.stack((ref_centroid, dist_centroid), dim=0).to(device)
         anchors = anchors / anchors.norm(dim=-1, keepdim=True)
@@ -139,8 +150,6 @@ def generate_anchors(
         anchors = anchors / anchors.norm(dim=-1, keepdim=True)
     else:
         raise ValueError(f"Anchors type {prompt_data} is not supported!")
-    if config["verbose"]:
-        print(f"Anchors of type [{prompt_data}] with shape: {anchors.shape} loaded!")
 
     return anchors
 
@@ -154,7 +163,6 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
     # load dataset embeddings
     target_tag = config["target_data"].lower()
     target_data = data_config[config["target_data"]]["dataset"]
-    target_data_path = data_config[config["target_data"]]["dataset_path"]
     target_data_subset = config["target_data_subset"]
     target_extractor = backbone_config[config["target_backbone"]]["extractor_type"]
     target_backbone = backbone_config[config["target_backbone"]]["backbone"]
@@ -164,11 +172,13 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
     target_pos_emb = backbone_config[config["target_backbone"]]["pos_embedding"]
 
     embeddings_name = f"{target_data}_{target_extractor}_{target_backbone}_{target_pretrain}_{target_pos_emb}"
-    dataset = dataset_factory(dataset=target_data)(
-        root=target_data_path,
-        subset=target_data_subset,
-        embeddings_name=embeddings_name
+
+    ds_factory = partial(dataset_factory(dataset=target_data), 
+                         embeddings_url=data_config[target_data.upper()]["dataset_path"],
+                         embeddings_name=embeddings_name
     )
+    dataset = ds_factory() if target_data_subset is None else ds_factory(subset=target_data_subset)
+    
     loader = torch.utils.data.DataLoader(
         dataset=dataset, batch_size=config["batch_size"], shuffle=False, drop_last=False
     )
@@ -178,7 +188,7 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
     logit_scale = torch.nn.Parameter(torch.tensor([1 / 0.07], device=config["device"]))
 
     with torch.no_grad():
-        for x, scores in tqdm(loader, total=len(loader), disable=not config["verbose"]):
+        for x, scores in tqdm(loader, total=len(loader)):
             all_scores = np.append(all_scores, scores)
             x = x.to(config["device"])
 
@@ -194,22 +204,6 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
             pred = probs[..., 0].mean(dim=1).cpu().numpy()
             predictions = np.append(predictions, pred)
 
-    results_dict = dict(map(lambda i, j: (i, j), dataset.x_paths, predictions))
-
-    scores_dir = os.path.join(
-        "/home/dp20/repos/ciq/data/output/new_output/scores",
-        target_tag,
-        target_data_subset,
-    )
-    os.makedirs(scores_dir, exist_ok=True)
-    torch.save(
-        results_dict,
-        os.path.join(
-            scores_dir,
-            f"{config['prompt_backbone']}_{config['prompt_data']}_{config['prompt_ratio']}.pt",
-        ),
-    )
-
     if config["target_cv_folds"] is not None:
         test_size = len(predictions) // (config["target_cv_folds"])
         indices = np.random.permutation(len(predictions))
@@ -221,9 +215,9 @@ def compute_srcc(config: dict, data_config: dict, backbone_config: dict) -> None
                 ind = indices[fold * test_size : (fold + 1) * test_size]
             srcc.append(abs(spearmanr(all_scores[ind], predictions[ind])[0]))
         srcc = np.array(srcc)
-    # save the SRCC
     else:
         srcc = np.array([abs(spearmanr(all_scores, predictions)[0])])
+        
     return srcc
 
 

@@ -22,7 +22,7 @@ def get_centroids_nr(
     # Median value of MOS defines distribution of samples between clusters
     median = np.median(list({key(item): value(item) for item in paths}.values()))
 
-    ratio = config["prompt_ratio"]
+    ratio = float(config["prompt_ratio"])
     if ratio is None:
         ratio = 1.0
 
