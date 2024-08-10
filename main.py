@@ -11,15 +11,12 @@ from embeddings.datasets import dataset_factory
 from tqdm.auto import tqdm
 from scipy.stats import spearmanr
 from pytorch_lightning import seed_everything
+from os.path import expanduser
 
-from aggregation.fr import get_centrorids_fr
 from aggregation.nr import get_centroids_nr, get_centroids_nr_cluster
-
 from aggregation.fr import get_centrorids_fr
-from aggregation.nr import (
-    get_centroids_nr,
-    get_centroids_nr_cluster
-)
+
+CACHE_FOLDER = expanduser("~/.quasar_cache")
 
 
 def parse_args() -> dict:
@@ -115,8 +112,9 @@ def generate_anchors(
             )
 
         ref_centroid, dist_centroid = centroids_func(
-            os.path.join(config["embeddings_path"], prompt_data, embeddings_name),
-            config=config,
+            CACHE_FOLDER, 
+            data_config[prompt_data.upper()]["dataset_path"],
+            embeddings_name, config
         )
         anchors = torch.stack((ref_centroid, dist_centroid), dim=0).to(device)
         anchors = anchors / anchors.norm(dim=-1, keepdim=True)

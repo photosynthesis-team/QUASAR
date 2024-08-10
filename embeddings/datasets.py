@@ -1,8 +1,4 @@
 # Define datasets to load embeddings and scores
-
-import requests
-from zipfile import ZipFile
-from io import BytesIO
 import torch
 import os
 from typing import Tuple, Any, Dict
@@ -12,6 +8,8 @@ from utils.io import read_json
 import numpy as np
 from scipy.io import loadmat
 from os.path import expanduser
+
+from utils.io import download_and_prepare_data
 
 
 CACHE_FOLDER = expanduser("~/.quasar_cache")
@@ -377,35 +375,8 @@ class AADB(torch.utils.data.Dataset):
             subset in supported_subsets
         ), f"Unknown subset [{subset}], choose one of {supported_subsets}."
 
-        aadb_folder = os.path.join(CACHE_FOLDER, "aadb")
-        if not os.path.isdir(aadb_folder):
-            self.__download_and_unzip(embeddings_url, aadb_folder)
-
         self.emb_tensor, self.x_paths, self.labels = \
-            self.__load_local_data(os.path.join(aadb_folder, embeddings_name))
-            
-    @staticmethod
-    def __download_and_unzip(url: str, target_folder: str) -> None:
-        response = requests.get(url)
-        response.raise_for_status() 
-
-        if not os.path.exists(target_folder):
-            os.makedirs(target_folder)
-
-        with ZipFile(BytesIO(response.content)) as zip_file:
-            zip_file.extractall(target_folder)
-
-
-    def __load_local_data(self, path: str) -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, Any]]:
-        emb_tensor = torch.load(path + ".pt")
-        emb_paths = read_json(path + ".json")["results_paths"]
-        labels = read_json(
-            os.path.join(os.path.dirname(path), "labels.json")
-        )
-        assert (
-            len(emb_tensor) == len(emb_paths) == len(labels)
-        ), "Mismatch of saved embeddings and corresponding filenames"
-        return emb_tensor, emb_paths, labels
+            download_and_prepare_data(CACHE_FOLDER, embeddings_url, embeddings_name)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, None, float]:
         x = self.emb_tensor[index]

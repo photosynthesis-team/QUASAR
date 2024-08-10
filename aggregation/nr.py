@@ -6,16 +6,15 @@ import numpy as np
 
 from typing import Tuple, Dict, Any, List
 
-from utils.io import read_json
+from utils.io import download_and_prepare_data
 from utils.common import value, key
 
 
 def get_centroids_nr(
-    path: str, config: Dict[str, Any]
-) -> Tuple[torch.Tensor, torch.Tensor]:
+        cache_folder: str, embeddings_url: str, embeddings_name: str, config: Dict[str, Any]) \
+    -> Tuple[torch.Tensor, torch.Tensor]:
     # Works for AVA
-    paths: np.ndarray = np.array(read_json(f"{path}.json")["results_paths"])
-    embeds: torch.Tensor = torch.load(f"{path}.pt", map_location="cpu")
+    embeds, paths, _ = download_and_prepare_data(cache_folder, embeddings_url, embeddings_name)
     assert len(paths) == len(
         embeds
     ), "Number of embeds and their paths has to be the same!"
@@ -80,9 +79,9 @@ def get_centroids_nr(
     return high_centroid, low_centroid
 
 
-def get_centroids_nr_cluster(path: str, config: Dict[str, Any]) -> List[torch.Tensor]:
-    paths: np.ndarray = np.array(read_json(f"{path}.json")["results_paths"])
-    embeds: torch.Tensor = torch.load(f"{path}.pt", map_location="cpu")
+def get_centroids_nr_cluster(cache_folder: str, embeddings_url: str, embeddings_name: str, config: Dict[str, Any]) \
+    -> List[torch.Tensor]:
+    embeds, paths, _ = download_and_prepare_data(cache_folder, embeddings_url, embeddings_name)
     assert len(paths) == len(
         embeds
     ), "Number of embeds and their paths has to be the same!"

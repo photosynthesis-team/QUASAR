@@ -1,5 +1,13 @@
 import yaml
 import json
+import requests
+import torch
+import os
+
+from zipfile import ZipFile
+from io import BytesIO
+from typing import Any, Dict, Tuple
+from tqdm import tqdm
 
 
 def dump_yml(data: dict, path: str) -> None:
@@ -50,3 +58,53 @@ def dump_json(data: dict, path: str) -> None:
     """
     with open(path, "w") as json_file:
         json.dump(data, json_file, indent=4)
+
+
+
+def download_and_prepare_data(cache_folder: str, embeddings_url: str, embeddings_name: str) \
+    -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, Any]]:
+    target_folder = os.path.join(cache_folder, embeddings_name.split('_')[0])
+    if not os.path.exists(target_folder):
+        os.makedirs(target_folder)
+
+    try:
+        emb_tensor, x_paths, labels = load_local_data(os.path.join(target_folder, embeddings_name))
+    except FileNotFoundError:
+        download_and_unzip(embeddings_url, target_folder)
+
+    emb_tensor, x_paths, labels = load_local_data(os.path.join(target_folder, embeddings_name))
+    
+    return emb_tensor, x_paths, labels
+
+
+def download_and_unzip(url: str, target_folder: str) -> None:
+    response = requests.get(url, stream=True)
+
+    # Sizes in bytes.
+    total_size = int(response.headers.get("content-length", 0))
+    block_size = 1024
+
+    tmp_file = os.path.join(target_folder, 'tmp.zip')
+    with tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar:
+        with open(tmp_file, "wb+") as file:
+            for data in response.iter_content(block_size):
+                progress_bar.update(len(data))
+                file.write(data)
+
+    if total_size != 0 and progress_bar.n != total_size:
+        raise RuntimeError("Could not download file")
+
+    with ZipFile(BytesIO(tmp_file)) as zip_file:
+        zip_file.extractall(target_folder)
+
+
+def load_local_data(path: str) -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, Any]]:
+    emb_tensor = torch.load(path + ".pt")
+    emb_paths = read_json(path + ".json")["results_paths"]
+    labels = read_json(
+        os.path.join(os.path.dirname(path), "labels.json")
+    )
+    assert (
+        len(emb_tensor) == len(emb_paths) == len(labels)
+    ), "Mismatch of saved embeddings and corresponding filenames"
+    return emb_tensor, emb_paths, labels

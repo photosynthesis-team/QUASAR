@@ -45,7 +45,7 @@ TAD66k:
 
 AVA:
   dataset: ava
-  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/untagged-f27f3fad9aa4520ae8ef/ava.zip
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/ava.zip
   batch_size: 128
 
 AADB: 

@@ -1,12 +1,13 @@
-from utils.io import read_json
 from typing import Tuple, Dict, Any
 import torch
 import os
 import numpy as np
 
+from utils.io import download_and_prepare_data
+
 
 def get_centrorids_fr(
-    path: str, config: Dict[str, Any]
+        cache_folder: str, embeddings_url: str, embeddings_name: str, config: Dict[str, Any]
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     # works for PIPAL and KADIS.
     # Other datasets would require other processing
@@ -16,8 +17,7 @@ def get_centrorids_fr(
         ratio = 1.0
     assert 0.0 < ratio <= 1.0, f"Ratio should be in (0., 1.] interval, got {ratio}"
 
-    paths = read_json(f"{path}.json")["results_paths"]
-    embeds = torch.load(f"{path}.pt", map_location="cpu")
+    embeds, paths, _ = download_and_prepare_data(cache_folder, embeddings_url, embeddings_name)
 
     files_names = np.array([os.path.splitext(os.path.basename(p))[0] for p in paths])
 
