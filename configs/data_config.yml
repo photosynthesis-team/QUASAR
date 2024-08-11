@@ -1,0 +1,70 @@
+KADIS700k:
+  dataset: kadis700k
+  dataset_path: https://drive.google.com/uc?export=download&id=17VkK9eAwmnobvxGQQa9VdeQrNJEM5jGR
+  batch_size: 128
+
+PIPAL: 
+  dataset: pipal
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/pipal.zip
+  batch_size: 128
+
+TID2013:
+  dataset: tid2013
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/tid2013_224.zip
+  batch_size: 128
+
+KonIQ10k:
+  dataset: koniq10k
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/koniq10k.zip
+  batch_size: 128
+
+KADID10k:
+  dataset: kadid10k
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/kadid10k_224.zip
+  batch_size: 128
+
+LIVEitW:
+  dataset: liveitw
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/liveitw_224.zip
+  batch_size: 1
+
+SPAQ:
+  dataset: spaq
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/spaq.zip
+  batch_size: 1
+
+SPAQ512:
+  dataset: spaq
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/spaq_512.zip
+  batch_size: 1
+
+TAD66k:
+  dataset: tad66k
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/tad66k_224.zip
+  batch_size: 128
+
+AVA:
+  dataset: ava
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/ava.zip
+  batch_size: 128
+
+AADB: 
+  dataset: aadb
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/aadb.zip
+  batch_size: 128
+
+PieAPP: 
+  dataset: pieapp
+  dataset_path: https://github.com/photosynthesis-team/QUASAR/releases/download/embeds/pieapp_224.zip
+  batch_size: 128
+
+SAC:
+  dataset: sac
+  dataset_path: TODO
+  batch_size: 1
+
+
+COYO700m:
+  dataset: coyo700m
+  dataset_path: TODO
+  batch_size: 1
